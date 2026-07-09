@@ -26,6 +26,22 @@
   letter-spacing: -0.01em;
 }
 
+.app__nav-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.app__sync {
+  font-size: 0.75rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.app__sync--error {
+  color: #a33;
+}
+
 .app__links {
   display: flex;
   gap: 0.25rem;
