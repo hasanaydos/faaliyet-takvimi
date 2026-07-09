@@ -1,6 +1,7 @@
 import { format } from 'date-fns'
 import { Link } from 'react-router-dom'
 import { isFaaliyetValid, useFaaliyetler } from '../context/FaaliyetContext'
+import { useViewMode } from '../context/ViewModeContext'
 import {
   assignLanes,
   buildHaftalar,
@@ -14,14 +15,24 @@ const LANE_H = 22
 const LANE_GAP = 3
 const STRIP_TOP = 28
 
+const MOBILE_LANE_H = 18
+const MOBILE_LANE_GAP = 2
+const MOBILE_STRIP_TOP = 22
+
 export default function Takvim() {
   const { faaliyetler } = useFaaliyetler()
+  const { mode } = useViewMode()
   const gecerli = faaliyetler.filter(isFaaliyetValid)
   const aylar = getAyAraligi(gecerli)
   const laneMap = assignLanes(gecerli)
+  const isMobile = mode === 'mobile'
+
+  const laneH = isMobile ? MOBILE_LANE_H : LANE_H
+  const laneGap = isMobile ? MOBILE_LANE_GAP : LANE_GAP
+  const stripTop = isMobile ? MOBILE_STRIP_TOP : STRIP_TOP
 
   return (
-    <div className="takvim">
+    <div className={isMobile ? 'takvim takvim--mobile' : 'takvim'}>
       <header className="takvim__header">
         <div>
           <p className="takvim__eyebrow">Faaliyet Takvimi</p>
@@ -51,7 +62,7 @@ export default function Takvim() {
               const weeks = buildHaftalar(ay, gecerli, laneMap)
               const maxLane = maxLaneInWeeks(weeks)
               const stripAreaH =
-                (maxLane + 1) * (LANE_H + LANE_GAP) + LANE_GAP
+                (maxLane + 1) * (laneH + laneGap) + laneGap
 
               return (
                 <section
@@ -72,7 +83,7 @@ export default function Takvim() {
                   <div className="takvim__gun-basliklari">
                     {HAFTA_GUNLERI.map((g) => (
                       <div key={g} className="takvim__gun-baslik">
-                        {g}
+                        {isMobile ? g.slice(0, 1) : g}
                       </div>
                     ))}
                   </div>
@@ -87,7 +98,7 @@ export default function Takvim() {
                           key={wi}
                           className="takvim__hafta"
                           style={{
-                            minHeight: STRIP_TOP + stripAreaH + 8,
+                            minHeight: stripTop + stripAreaH + 8,
                           }}
                         >
                           <div className="takvim__gunler">
@@ -111,13 +122,13 @@ export default function Takvim() {
 
                           <div
                             className="takvim__seritler"
-                            style={{ top: STRIP_TOP, height: stripAreaH }}
+                            style={{ top: stripTop, height: stripAreaH }}
                           >
                             {week.segments.map((seg) => {
                               const left = `${(seg.startCol / 7) * 100}%`
                               const width = `${(seg.span / 7) * 100}%`
                               const top =
-                                seg.lane * (LANE_H + LANE_GAP) + LANE_GAP
+                                seg.lane * (laneH + laneGap) + laneGap
                               const label = [
                                 seg.faaliyet.ad,
                                 seg.faaliyet.tur,
@@ -140,13 +151,13 @@ export default function Takvim() {
                                     left,
                                     width,
                                     top,
-                                    height: LANE_H,
+                                    height: laneH,
                                     backgroundColor: seg.faaliyet.renk,
                                   }}
                                   title={label}
                                 >
                                   <span className="takvim__serit-text">
-                                    {label}
+                                    {isMobile ? seg.faaliyet.ad : label}
                                   </span>
                                 </div>
                               )

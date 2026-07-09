@@ -183,3 +183,72 @@
   text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
   letter-spacing: 0.01em;
 }
+
+/* Tam mobil: ekrana sığ, yatay kaydırma yok */
+.takvim--mobile {
+  max-width: none;
+  padding: 1.1rem 0.55rem 3rem;
+}
+
+.takvim--mobile .takvim__header {
+  gap: 0.85rem;
+  margin-bottom: 1.1rem;
+  padding: 0 0.3rem;
+}
+
+.takvim--mobile .takvim__lead {
+  font-size: 0.85rem;
+}
+
+.takvim--mobile .takvim__scroll {
+  overflow-x: hidden;
+}
+
+.takvim--mobile .takvim__paper {
+  min-width: 0;
+  width: 100%;
+  box-shadow: none;
+}
+
+.takvim--mobile .takvim__ay {
+  padding: 1rem 0.45rem 1.15rem;
+}
+
+.takvim--mobile .takvim__ay-baslik {
+  margin-bottom: 0.65rem;
+  padding: 0 0.2rem 0.45rem;
+}
+
+.takvim--mobile .takvim__ay-baslik h2 {
+  font-size: 1.1rem;
+}
+
+.takvim--mobile .takvim__gun-baslik {
+  font-size: 0.62rem;
+  letter-spacing: 0.02em;
+  padding: 0.15rem 0;
+}
+
+.takvim--mobile .takvim__gun {
+  padding: 0.2rem 0.1rem;
+}
+
+.takvim--mobile .takvim__gun-no {
+  font-size: 0.68rem;
+}
+
+.takvim--mobile .takvim__serit {
+  padding: 0 0.25rem;
+}
+
+.takvim--mobile .takvim__serit--start {
+  margin-left: 1px;
+}
+
+.takvim--mobile .takvim__serit--end {
+  margin-right: 1px;
+}
+
+.takvim--mobile .takvim__serit-text {
+  font-size: 0.58rem;
+}

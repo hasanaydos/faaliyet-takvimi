@@ -1,9 +1,44 @@
 import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
+import type { Faaliyet } from '../types'
 import { FAALIYET_RENKLERI } from '../types'
 import { useFaaliyetler } from '../context/FaaliyetContext'
+import { useViewMode } from '../context/ViewModeContext'
 import { downloadSablon, parseFaaliyetExcel } from '../utils/excel'
 import './Giris.css'
+
+function RenkPicker({
+  f,
+  onUpdate,
+}: {
+  f: Faaliyet
+  onUpdate: (id: string, patch: Partial<Omit<Faaliyet, 'id'>>) => void
+}) {
+  return (
+    <div className="giris__renk">
+      <input
+        type="color"
+        value={f.renk}
+        onChange={(e) => onUpdate(f.id, { renk: e.target.value })}
+        aria-label="Renk seç"
+      />
+      <div className="giris__renk-swatches">
+        {FAALIYET_RENKLERI.map((r) => (
+          <button
+            key={r}
+            type="button"
+            className={
+              f.renk === r ? 'giris__swatch giris__swatch--active' : 'giris__swatch'
+            }
+            style={{ background: r }}
+            onClick={() => onUpdate(f.id, { renk: r })}
+            aria-label={`Renk ${r}`}
+          />
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export default function Giris() {
   const {
@@ -14,6 +49,7 @@ export default function Giris() {
     addFaaliyet,
     removeFaaliyet,
   } = useFaaliyetler()
+  const { mode } = useViewMode()
 
   const fileRef = useRef<HTMLInputElement>(null)
   const [yukleniyor, setYukleniyor] = useState(false)
@@ -52,7 +88,7 @@ export default function Giris() {
   }
 
   return (
-    <div className="giris">
+    <div className={mode === 'mobile' ? 'giris giris--mobile' : 'giris'}>
       <header className="giris__header">
         <div>
           <p className="giris__eyebrow">Faaliyet Takvimi</p>
@@ -114,31 +150,34 @@ export default function Giris() {
         </p>
       )}
 
-      <div className="giris__table-wrap">
-        <table className="giris__table">
-          <thead>
-            <tr>
-              <th>Faaliyet adı</th>
-              <th>Tür</th>
-              <th>Başlangıç</th>
-              <th>Bitiş</th>
-              <th>Etiket</th>
-              <th>Renk</th>
-              <th aria-label="Sil" />
-            </tr>
-          </thead>
-          <tbody>
-            {faaliyetler.map((f) => (
-              <tr key={f.id}>
-                <td>
+      {mode === 'mobile' ? (
+        <div className="giris__cards">
+          {faaliyetler.map((f, index) => (
+            <article key={f.id} className="giris__card">
+              <div className="giris__card-head">
+                <span className="giris__card-index">#{index + 1}</span>
+                <button
+                  type="button"
+                  className="btn btn--icon"
+                  onClick={() => removeFaaliyet(f.id)}
+                  aria-label="Satırı sil"
+                  title="Sil"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="giris__card-grid">
+                <label className="giris__field">
+                  <span>Faaliyet adı</span>
                   <input
                     type="text"
                     value={f.ad}
                     placeholder="Örn. Kış Kampı"
                     onChange={(e) => updateFaaliyet(f.id, { ad: e.target.value })}
                   />
-                </td>
-                <td>
+                </label>
+                <label className="giris__field">
+                  <span>Tür</span>
                   <input
                     type="text"
                     value={f.tur}
@@ -146,8 +185,9 @@ export default function Giris() {
                     onChange={(e) => updateFaaliyet(f.id, { tur: e.target.value })}
                     onBlur={() => syncTurRenk(f.id)}
                   />
-                </td>
-                <td>
+                </label>
+                <label className="giris__field">
+                  <span>Başlangıç</span>
                   <input
                     type="date"
                     value={f.baslangic}
@@ -155,8 +195,9 @@ export default function Giris() {
                       updateFaaliyet(f.id, { baslangic: e.target.value })
                     }
                   />
-                </td>
-                <td>
+                </label>
+                <label className="giris__field">
+                  <span>Bitiş</span>
                   <input
                     type="date"
                     value={f.bitis}
@@ -165,8 +206,9 @@ export default function Giris() {
                       updateFaaliyet(f.id, { bitis: e.target.value })
                     }
                   />
-                </td>
-                <td>
+                </label>
+                <label className="giris__field">
+                  <span>Etiket</span>
                   <input
                     type="text"
                     value={f.etiket}
@@ -175,51 +217,102 @@ export default function Giris() {
                       updateFaaliyet(f.id, { etiket: e.target.value })
                     }
                   />
-                </td>
-                <td>
-                  <div className="giris__renk">
-                    <input
-                      type="color"
-                      value={f.renk}
-                      onChange={(e) =>
-                        updateFaaliyet(f.id, { renk: e.target.value })
-                      }
-                      aria-label="Renk seç"
-                    />
-                    <div className="giris__renk-swatches">
-                      {FAALIYET_RENKLERI.map((r) => (
-                        <button
-                          key={r}
-                          type="button"
-                          className={
-                            f.renk === r
-                              ? 'giris__swatch giris__swatch--active'
-                              : 'giris__swatch'
-                          }
-                          style={{ background: r }}
-                          onClick={() => updateFaaliyet(f.id, { renk: r })}
-                          aria-label={`Renk ${r}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <button
-                    type="button"
-                    className="btn btn--icon"
-                    onClick={() => removeFaaliyet(f.id)}
-                    aria-label="Satırı sil"
-                    title="Sil"
-                  >
-                    ×
-                  </button>
-                </td>
+                </label>
+                <div className="giris__field giris__field--renk">
+                  <span>Renk</span>
+                  <RenkPicker f={f} onUpdate={updateFaaliyet} />
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="giris__table-wrap">
+          <table className="giris__table">
+            <thead>
+              <tr>
+                <th>Faaliyet adı</th>
+                <th>Tür</th>
+                <th>Başlangıç</th>
+                <th>Bitiş</th>
+                <th>Etiket</th>
+                <th>Renk</th>
+                <th aria-label="Sil" />
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {faaliyetler.map((f) => (
+                <tr key={f.id}>
+                  <td>
+                    <input
+                      type="text"
+                      value={f.ad}
+                      placeholder="Örn. Kış Kampı"
+                      onChange={(e) =>
+                        updateFaaliyet(f.id, { ad: e.target.value })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={f.tur}
+                      placeholder="Eğitim, Saha…"
+                      onChange={(e) =>
+                        updateFaaliyet(f.id, { tur: e.target.value })
+                      }
+                      onBlur={() => syncTurRenk(f.id)}
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="date"
+                      value={f.baslangic}
+                      onChange={(e) =>
+                        updateFaaliyet(f.id, { baslangic: e.target.value })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="date"
+                      value={f.bitis}
+                      min={f.baslangic}
+                      onChange={(e) =>
+                        updateFaaliyet(f.id, { bitis: e.target.value })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={f.etiket}
+                      placeholder="etiket"
+                      onChange={(e) =>
+                        updateFaaliyet(f.id, { etiket: e.target.value })
+                      }
+                    />
+                  </td>
+                  <td>
+                    <RenkPicker f={f} onUpdate={updateFaaliyet} />
+                  </td>
+                  <td>
+                    <button
+                      type="button"
+                      className="btn btn--icon"
+                      onClick={() => removeFaaliyet(f.id)}
+                      aria-label="Satırı sil"
+                      title="Sil"
+                    >
+                      ×
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       <div className="giris__footer">
         <button type="button" className="btn btn--secondary" onClick={addFaaliyet}>

@@ -182,3 +182,96 @@
   margin-top: 1.25rem;
   flex-wrap: wrap;
 }
+
+/* Tam mobil: kart listesi, yatay kaydırma yok */
+.giris--mobile {
+  padding: 1.25rem 0.85rem 3rem;
+}
+
+.giris--mobile .giris__header {
+  margin-bottom: 1.25rem;
+  gap: 1rem;
+}
+
+.giris--mobile .giris__lead {
+  font-size: 0.9rem;
+}
+
+.giris--mobile .giris__actions {
+  width: 100%;
+}
+
+.giris--mobile .giris__actions .btn {
+  flex: 1 1 calc(50% - 0.25rem);
+}
+
+.giris__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.giris__card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  padding: 0.85rem 0.9rem 1rem;
+}
+
+.giris__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.giris__card-index {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.giris__card-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem 0.55rem;
+}
+
+.giris__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.giris__field:nth-child(1),
+.giris__field:nth-child(2),
+.giris__field--renk {
+  grid-column: 1 / -1;
+}
+
+.giris__field span {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.giris__field input[type='text'],
+.giris__field input[type='date'] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.6rem 0.65rem;
+  border: 1px solid var(--line);
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
+  border-radius: 4px;
+}
+
+.giris__field input[type='text']:focus,
+.giris__field input[type='date']:focus {
+  outline: none;
+  border-color: var(--accent);
+}
