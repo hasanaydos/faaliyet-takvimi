@@ -26,6 +26,18 @@ interface FaaliyetContextValue {
 }
 
 const FaaliyetContext = createContext<FaaliyetContextValue | null>(null)
+const LEGACY_STORAGE_KEY = 'faaliyet-takvimi-v1'
+
+function loadLegacyLocal(): Faaliyet[] | null {
+  try {
+    const raw = localStorage.getItem(LEGACY_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Faaliyet[]
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null
+  } catch {
+    return null
+  }
+}
 
 function emptyRow(mevcut: Faaliyet[] = []): Faaliyet {
   const today = new Date().toISOString().slice(0, 10)
@@ -52,8 +64,19 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     ;(async () => {
       try {
-        const items = await fetchFaaliyetler()
+        let items = await fetchFaaliyetler()
         if (cancelled) return
+
+        // Eski localStorage verisini bir kez sunucuya taşı
+        if (items.length === 0) {
+          const legacy = loadLegacyLocal()
+          if (legacy) {
+            await saveFaaliyetler(legacy)
+            items = legacy
+            localStorage.removeItem(LEGACY_STORAGE_KEY)
+          }
+        }
+
         setFaaliyetlerState(items.length > 0 ? items : [emptyRow()])
         setError(null)
       } catch (err) {
