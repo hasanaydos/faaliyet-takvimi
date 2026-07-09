@@ -1,0 +1,56 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600&display=swap');
+
+:root {
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Source Sans 3', 'Segoe UI', sans-serif;
+
+  --ink: #2c241c;
+  --ink-soft: #5a4e42;
+  --muted: #7a6e62;
+  --line: #d4c8b8;
+  --surface: #fffdf8;
+  --surface-2: #f3ebe0;
+  --bg: #efe6d8;
+  --accent: #9a4a28;
+  --accent-hover: #7e3c20;
+
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse 80% 50% at 10% -10%, rgba(154, 74, 40, 0.08), transparent),
+    radial-gradient(ellipse 60% 40% at 100% 0%, rgba(42, 111, 111, 0.07), transparent),
+    var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+}
+
+button,
+input {
+  font: inherit;
+}

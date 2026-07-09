@@ -1,0 +1,185 @@
+.takvim {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.takvim__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.75rem;
+}
+
+.takvim h1 {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.takvim__lead {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.takvim__empty {
+  text-align: center;
+  padding: 4rem 1rem;
+  border: 1px dashed var(--line);
+  background: var(--surface);
+  color: var(--muted);
+}
+
+.takvim__empty p {
+  margin: 0 0 1.25rem;
+}
+
+.takvim__scroll {
+  overflow-x: auto;
+}
+
+.takvim__paper {
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 40px rgba(40, 32, 24, 0.08);
+  min-width: 640px;
+}
+
+.takvim__ay {
+  padding: 1.5rem 1.25rem 1.75rem;
+  border-bottom: 2px solid var(--ink-soft);
+}
+
+.takvim__ay:last-child {
+  border-bottom: none;
+}
+
+.takvim__ay--light {
+  background: #f7f3ec;
+}
+
+.takvim__ay--dark {
+  background: #e8e0d4;
+}
+
+.takvim__ay-baslik {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgba(60, 48, 36, 0.18);
+}
+
+.takvim__ay-baslik h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+
+.takvim__ay-index {
+  font-size: 0.75rem;
+  color: var(--muted);
+  letter-spacing: 0.06em;
+}
+
+.takvim__gun-basliklari {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-bottom: 0.35rem;
+}
+
+.takvim__gun-baslik {
+  text-align: center;
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0.25rem 0;
+  font-weight: 600;
+}
+
+.takvim__hafta {
+  position: relative;
+  border-top: 1px solid rgba(60, 48, 36, 0.12);
+}
+
+.takvim__gunler {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+.takvim__gun {
+  border-right: 1px solid rgba(60, 48, 36, 0.08);
+  padding: 0.35rem 0.4rem;
+}
+
+.takvim__gun:last-child {
+  border-right: none;
+}
+
+.takvim__gun--bos {
+  background: rgba(60, 48, 36, 0.04);
+}
+
+.takvim__gun-no {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.takvim__seritler {
+  position: absolute;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.takvim__serit {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  padding: 0 0.45rem;
+  box-sizing: border-box;
+  overflow: hidden;
+  pointer-events: auto;
+  opacity: 0.92;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+
+.takvim__serit--start {
+  border-top-left-radius: 3px;
+  border-bottom-left-radius: 3px;
+  margin-left: 2px;
+}
+
+.takvim__serit--end {
+  border-top-right-radius: 3px;
+  border-bottom-right-radius: 3px;
+  margin-right: 2px;
+}
+
+.takvim__serit-text {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.25);
+  letter-spacing: 0.01em;
+}
