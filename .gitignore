@@ -24,3 +24,5 @@ server-check.php
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*
