@@ -20,7 +20,7 @@
   inset: 0;
   z-index: 100;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
   padding: 1rem;
   background: rgba(40, 32, 24, 0.45);
@@ -28,6 +28,8 @@
 
 .admin-gate__dialog {
   width: min(100%, 400px);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
   background: #f7f3ec;
   border: 1px solid var(--line);
   box-shadow: 0 16px 40px rgba(40, 32, 24, 0.2);
