@@ -100,7 +100,7 @@
 
 .giris__table th {
   text-align: left;
-  padding: 0.75rem 0.85rem;
+  padding: 0.35rem 0.35rem;
   font-size: 0.7rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -108,6 +108,66 @@
   border-bottom: 1px solid var(--line);
   background: var(--surface-2);
   font-weight: 600;
+}
+
+.giris__sort-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.giris__sort-btn:hover {
+  color: var(--ink);
+  background: rgba(60, 48, 36, 0.06);
+}
+
+.giris__sort-icon {
+  font-size: 0.75rem;
+  opacity: 0.35;
+  line-height: 1;
+}
+
+.giris__sort-icon--active {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.giris__mobile-sort {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 0.85rem;
+}
+
+.giris__mobile-sort span {
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.giris__mobile-sort select {
+  width: 100%;
+  padding: 0.6rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
 }
 
 .giris__table td {
