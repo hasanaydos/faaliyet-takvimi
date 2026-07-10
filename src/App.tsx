@@ -1,12 +1,17 @@
 import { BrowserRouter, NavLink, Route, Routes } from 'react-router-dom'
+import { AuthProvider, useAuth } from './context/AuthContext'
 import { FaaliyetProvider, useFaaliyetler } from './context/FaaliyetContext'
 import { ViewModeProvider, useViewMode } from './context/ViewModeContext'
+import AdminGate from './components/AdminGate'
 import Giris from './pages/Giris'
 import Takvim from './pages/Takvim'
 import './App.css'
 
 function SyncStatus() {
+  const { isAdmin } = useAuth()
   const { loading, saving, error } = useFaaliyetler()
+  if (!isAdmin) return null
+
   let text = 'Hazır'
   if (loading) text = 'Yükleniyor…'
   else if (saving) text = 'Kaydediliyor…'
@@ -54,6 +59,8 @@ function ViewModeToggle() {
 }
 
 function AppShell() {
+  const { isAdmin } = useAuth()
+
   return (
     <div className="app">
       <nav className="app__nav">
@@ -61,6 +68,7 @@ function AppShell() {
           <span className="app__brand">Faaliyet Takvimi</span>
           <div className="app__nav-right">
             <SyncStatus />
+            <AdminGate />
             <div className="app__links">
               <NavLink
                 to="/"
@@ -69,7 +77,7 @@ function AppShell() {
                   isActive ? 'app__link app__link--active' : 'app__link'
                 }
               >
-                Giriş
+                Liste
               </NavLink>
               <NavLink
                 to="/takvim"
@@ -82,7 +90,12 @@ function AppShell() {
             </div>
           </div>
         </div>
-        <ViewModeToggle />
+        <div className="app__nav-bottom">
+          <ViewModeToggle />
+          {!isAdmin ? (
+            <span className="app__viewer-note">Görüntüleme modu</span>
+          ) : null}
+        </div>
       </nav>
       <main className="app__main">
         <Routes>
@@ -94,14 +107,23 @@ function AppShell() {
   )
 }
 
-export default function App() {
+function AuthedApp() {
+  const { isAdmin } = useAuth()
   return (
-    <FaaliyetProvider>
+    <FaaliyetProvider canPersist={isAdmin}>
       <ViewModeProvider>
         <BrowserRouter>
           <AppShell />
         </BrowserRouter>
       </ViewModeProvider>
     </FaaliyetProvider>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AuthedApp />
+    </AuthProvider>
   )
 }

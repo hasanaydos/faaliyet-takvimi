@@ -1,5 +1,6 @@
 import type { Faaliyet } from '../types'
 import type { ListSort } from './faaliyetApi'
+import { getAdminAuthHeader } from '../context/AuthContext'
 
 export interface YedekMeta {
   id: string
@@ -22,8 +23,15 @@ function errorMessage(res: Response, body: { error?: string } | null): string {
   return body?.error || `Islem hatasi (${res.status})`
 }
 
+function authHeaders(json = false): HeadersInit {
+  return {
+    ...(json ? { 'Content-Type': 'application/json' } : {}),
+    ...getAdminAuthHeader(),
+  }
+}
+
 export async function listYedekler(): Promise<YedekMeta[]> {
-  const res = await fetch('/api/yedekler')
+  const res = await fetch('/api/yedekler', { headers: authHeaders() })
   const body = (await res.json().catch(() => null)) as {
     yedekler?: YedekMeta[]
     error?: string
@@ -43,7 +51,7 @@ export async function createYedek(input: {
 }> {
   const res = await fetch('/api/yedekler', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(true),
     body: JSON.stringify(input),
   })
   const body = (await res.json().catch(() => null)) as {
@@ -62,7 +70,9 @@ export async function createYedek(input: {
 }
 
 export async function fetchYedek(id: string): Promise<YedekDosyasi> {
-  const res = await fetch(`/api/yedekler?id=${encodeURIComponent(id)}`)
+  const res = await fetch(`/api/yedekler?id=${encodeURIComponent(id)}`, {
+    headers: authHeaders(),
+  })
   const body = (await res.json().catch(() => null)) as {
     yedek?: YedekDosyasi
     error?: string
@@ -78,7 +88,7 @@ export async function restoreYedekById(id: string): Promise<{
 }> {
   const res = await fetch('/api/yedekler', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(true),
     body: JSON.stringify({ id }),
   })
   const body = (await res.json().catch(() => null)) as {
@@ -102,7 +112,7 @@ export async function restoreYedekFromFile(snapshot: {
 }> {
   const res = await fetch('/api/yedekler', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(true),
     body: JSON.stringify(snapshot),
   })
   const body = (await res.json().catch(() => null)) as {

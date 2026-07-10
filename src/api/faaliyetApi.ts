@@ -1,4 +1,5 @@
 import type { Faaliyet } from '../types'
+import { getAdminAuthHeader } from '../context/AuthContext'
 
 export type SortKey = 'ad' | 'tur' | 'baslangic' | 'bitis' | 'etiket' | 'renk'
 export type SortDir = 'asc' | 'desc'
@@ -54,7 +55,10 @@ export async function saveFaaliyetler(
 ): Promise<void> {
   const res = await fetch('/api/faaliyetler', {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...getAdminAuthHeader(),
+    },
     body: JSON.stringify({ faaliyetler, sort }),
   })
   if (!res.ok) {

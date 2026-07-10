@@ -1,5 +1,6 @@
 import { createClient } from '@libsql/client'
 import { randomUUID } from 'node:crypto'
+import { requireAdmin } from './_auth.js'
 
 const MAX_YEDEK = 10
 const SORT_KEYS = new Set(['ad', 'tur', 'baslangic', 'bitis', 'etiket', 'renk'])
@@ -209,7 +210,7 @@ function toMeta(row, veri) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end()
@@ -220,6 +221,7 @@ export default async function handler(req, res) {
     const body = typeof req.body === 'string' ? JSON.parse(req.body || '{}') : req.body || {}
 
     if (req.method === 'GET') {
+      if (!requireAdmin(req, res)) return
       const id = typeof req.query?.id === 'string' ? req.query.id : null
       if (id) {
         const result = await db.execute({
@@ -250,6 +252,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
+      if (!requireAdmin(req, res)) return
       const aciklama = String(body.aciklama ?? '').trim()
       if (!aciklama) {
         return res.status(400).json({ error: 'Aciklama gerekli' })
@@ -309,6 +312,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (!requireAdmin(req, res)) return
       // id ile iç yedekten veya dosya snapshot'ından geri yükle
       let snapshot = null
       let kaynak = 'dosya'

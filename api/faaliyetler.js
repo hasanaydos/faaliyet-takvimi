@@ -1,4 +1,5 @@
 import { createClient } from '@libsql/client'
+import { requireAdmin } from './_auth.js'
 
 const SORT_KEYS = new Set(['ad', 'tur', 'baslangic', 'bitis', 'etiket', 'renk'])
 const SORT_DIRS = new Set(['asc', 'desc'])
@@ -103,7 +104,7 @@ async function writeSort(db, sort) {
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   if (req.method === 'OPTIONS') {
     return res.status(204).end()
@@ -122,6 +123,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'PUT') {
+      if (!requireAdmin(req, res)) return
       const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body
       const list = Array.isArray(body?.faaliyetler) ? body.faaliyetler : null
       if (!list || !list.every(isFaaliyet)) {

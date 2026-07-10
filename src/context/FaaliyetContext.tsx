@@ -63,7 +63,13 @@ function emptyRow(mevcut: Faaliyet[] = []): Faaliyet {
   }
 }
 
-export function FaaliyetProvider({ children }: { children: ReactNode }) {
+export function FaaliyetProvider({
+  children,
+  canPersist = true,
+}: {
+  children: ReactNode
+  canPersist?: boolean
+}) {
   const [faaliyetler, setFaaliyetlerState] = useState<Faaliyet[]>([])
   const [sort, setSortState] = useState<ListSort | null>(null)
   const [loading, setLoading] = useState(true)
@@ -71,6 +77,8 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null)
   const skipSave = useRef(true)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const canPersistRef = useRef(canPersist)
+  canPersistRef.current = canPersist
 
   useEffect(() => {
     let cancelled = false
@@ -114,10 +122,11 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (loading || skipSave.current) return
+    if (!canPersist || loading || skipSave.current) return
 
     if (saveTimer.current) clearTimeout(saveTimer.current)
     saveTimer.current = setTimeout(async () => {
+      if (!canPersistRef.current) return
       setSaving(true)
       try {
         await saveFaaliyetler(faaliyetler, sort)
@@ -132,7 +141,7 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
     }
-  }, [faaliyetler, sort, loading])
+  }, [faaliyetler, sort, loading, canPersist])
 
   const setFaaliyetler = useCallback((items: Faaliyet[]) => {
     setFaaliyetlerState(items.length > 0 ? items : [emptyRow()])

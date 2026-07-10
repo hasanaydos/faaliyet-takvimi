@@ -222,10 +222,17 @@
   background: #fff;
 }
 
-.giris__renk {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
+.giris__renk-hex {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.giris--readonly input[readonly],
+.giris--readonly input:disabled {
+  cursor: default;
+  color: var(--ink);
+  background: transparent;
 }
 
 .giris__renk input[type='color'] {

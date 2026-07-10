@@ -24,6 +24,20 @@
   gap: 1rem;
 }
 
+.app__nav-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.app__viewer-note {
+  font-size: 0.75rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .app__mode {
   display: inline-flex;
   align-self: flex-start;
