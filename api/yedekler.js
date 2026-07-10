@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 const MAX_YEDEK = 10
 const SORT_KEYS = new Set(['ad', 'tur', 'baslangic', 'bitis', 'etiket', 'renk'])
 const SORT_DIRS = new Set(['asc', 'desc'])
+const DEFAULT_BACKUP_EMAIL = 'hasanaydos1727@gmail.com'
 
 function getClient() {
   const url = process.env.TURSO_DATABASE_URL
@@ -123,15 +124,12 @@ async function pruneYedekler(db) {
   }
 }
 
-function isValidEmail(value) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
-}
-
 async function sendBackupEmail({ to, aciklama, olusturma, adet, payload }) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) {
     return {
       sent: false,
+      to,
       reason: 'E-posta servisi yapilandirilmamis (RESEND_API_KEY eksik)',
     }
   }
@@ -179,17 +177,17 @@ async function sendBackupEmail({ to, aciklama, olusturma, adet, payload }) {
       const msg = String(parsed?.message || '')
       if (msg.includes('only send testing emails')) {
         reason =
-          'Resend test modunda: mail yalnizca hasanaydos1727@gmail.com adresine gidebilir. Bu adresi kullanin veya Resend’de domain dogrulayin.'
+          'Resend test modunda: mail yalnizca hasanaydos1727@gmail.com adresine gidebilir.'
       } else if (msg) {
         reason = msg
       }
     } catch {
       if (errBody) reason += `: ${errBody.slice(0, 180)}`
     }
-    return { sent: false, reason }
+    return { sent: false, to, reason }
   }
 
-  return { sent: true }
+  return { sent: true, to }
 }
 
 function toMeta(row, veri) {
@@ -261,10 +259,8 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Gecersiz yedek verisi' })
       }
 
-      const email = String(body.email ?? '').trim().toLowerCase()
-      if (email && !isValidEmail(email)) {
-        return res.status(400).json({ error: 'Gecersiz e-posta adresi' })
-      }
+      const email =
+        process.env.BACKUP_EMAIL_TO || DEFAULT_BACKUP_EMAIL
 
       const id = randomUUID()
       const olusturma = new Date().toISOString()
@@ -281,24 +277,21 @@ export default async function handler(req, res) {
       })
       await pruneYedekler(db)
 
-      let emailResult = { sent: false, reason: null }
-      if (email) {
-        emailResult = await sendBackupEmail({
-          to: email,
+      const emailResult = await sendBackupEmail({
+        to: email,
+        aciklama,
+        olusturma,
+        adet: snapshot.faaliyetler.length,
+        payload: {
+          version: 1,
+          id,
           aciklama,
           olusturma,
           adet: snapshot.faaliyetler.length,
-          payload: {
-            version: 1,
-            id,
-            aciklama,
-            olusturma,
-            adet: snapshot.faaliyetler.length,
-            faaliyetler: snapshot.faaliyetler,
-            sort: snapshot.sort,
-          },
-        })
-      }
+          faaliyetler: snapshot.faaliyetler,
+          sort: snapshot.sort,
+        },
+      })
 
       return res.status(201).json({
         yedek: {

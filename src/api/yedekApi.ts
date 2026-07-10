@@ -34,12 +34,11 @@ export async function listYedekler(): Promise<YedekMeta[]> {
 
 export async function createYedek(input: {
   aciklama: string
-  email?: string
   faaliyetler: Faaliyet[]
   sort: ListSort | null
 }): Promise<{
   yedek: YedekDosyasi
-  email: { sent: boolean; reason?: string | null }
+  email: { sent: boolean; to?: string; reason?: string | null }
   emailConfigured: boolean
 }> {
   const res = await fetch('/api/yedekler', {
@@ -49,7 +48,7 @@ export async function createYedek(input: {
   })
   const body = (await res.json().catch(() => null)) as {
     yedek?: YedekDosyasi
-    email?: { sent: boolean; reason?: string | null }
+    email?: { sent: boolean; to?: string; reason?: string | null }
     emailConfigured?: boolean
     error?: string
   } | null

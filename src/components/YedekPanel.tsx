@@ -23,17 +23,6 @@ function formatTarih(iso: string): string {
   }
 }
 
-const EMAIL_KEY = 'faaliyet-takvimi-backup-email'
-const DEFAULT_EMAIL = 'hasanaydos1727@gmail.com'
-
-function loadSavedEmail(): string {
-  try {
-    return localStorage.getItem(EMAIL_KEY) || DEFAULT_EMAIL
-  } catch {
-    return DEFAULT_EMAIL
-  }
-}
-
 export default function YedekPanel() {
   const { faaliyetler, sort, restoreSnapshot } = useFaaliyetler()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -41,7 +30,6 @@ export default function YedekPanel() {
   const [yedekModal, setYedekModal] = useState(false)
   const [geriModal, setGeriModal] = useState(false)
   const [aciklama, setAciklama] = useState('')
-  const [email, setEmail] = useState(loadSavedEmail)
   const [liste, setListe] = useState<YedekMeta[]>([])
   const [seciliId, setSeciliId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -79,42 +67,27 @@ export default function YedekPanel() {
       setMesaj({ tip: 'hata', metin: 'Lütfen bir açıklama girin.' })
       return
     }
-    const mail = email.trim()
-    if (mail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(mail)) {
-      setMesaj({ tip: 'hata', metin: 'Geçerli bir e-posta adresi girin.' })
-      return
-    }
 
     setBusy(true)
     setMesaj(null)
     try {
       const result = await createYedek({
         aciklama: text,
-        email: mail || undefined,
         faaliyetler,
         sort,
       })
       downloadYedekDosyasi(result.yedek)
-      if (mail) {
-        try {
-          localStorage.setItem(EMAIL_KEY, mail)
-        } catch {
-          /* ignore */
-        }
-      }
       setYedekModal(false)
       setAciklama('')
 
       let metin =
         'Yedek alındı: sistem içine kaydedildi ve JSON dosyası indirildi.'
-      if (mail) {
-        if (result.email.sent) {
-          metin += ` Ayrıca ${mail} adresine e-posta ile gönderildi.`
-        } else {
-          metin += ` E-posta gönderilemedi${
-            result.email.reason ? ` (${result.email.reason})` : ''
-          }.`
-        }
+      if (result.email.sent) {
+        metin += ` Yedek şu mail adresine de gönderildi: ${result.email.to || 'hasanaydos1727@gmail.com'}.`
+      } else {
+        metin += ` E-posta gönderilemedi${
+          result.email.reason ? ` (${result.email.reason})` : ''
+        }.`
       }
       setMesaj({ tip: 'ok', metin })
     } catch (err) {
@@ -244,9 +217,8 @@ export default function YedekPanel() {
         </p>
       ) : (
         <p className="yedek__hint">
-          Yedek hem sisteme kaydedilir hem JSON olarak cihazınıza iner. Sistem
-          son 10 yedeği tutar; arıza durumunda indirilen dosyadan da geri
-          yükleyebilirsiniz.
+          Yedek hem sisteme kaydedilir hem JSON olarak cihazınıza iner; ayrıca
+          otomatik olarak e-posta ile gönderilir. Sistem son 10 yedeği tutar.
         </p>
       )}
 
@@ -285,21 +257,6 @@ export default function YedekPanel() {
                 disabled={busy}
               />
             </label>
-            <label className="yedek__field">
-              <span>E-posta (isteğe bağlı)</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="hasanaydos1727@gmail.com"
-                disabled={busy}
-              />
-            </label>
-            <p className="yedek__field-hint">
-              Resend test modunda mail yalnızca{' '}
-              <strong>hasanaydos1727@gmail.com</strong> adresine gider. Başka
-              adrese göndermek için Resend’de domain doğrulamanız gerekir.
-            </p>
             <div className="yedek__dialog-actions">
               <button
                 type="button"
