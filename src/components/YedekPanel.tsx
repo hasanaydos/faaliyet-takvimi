@@ -24,12 +24,13 @@ function formatTarih(iso: string): string {
 }
 
 const EMAIL_KEY = 'faaliyet-takvimi-backup-email'
+const DEFAULT_EMAIL = 'hasanaydos1727@gmail.com'
 
 function loadSavedEmail(): string {
   try {
-    return localStorage.getItem(EMAIL_KEY) || ''
+    return localStorage.getItem(EMAIL_KEY) || DEFAULT_EMAIL
   } catch {
-    return ''
+    return DEFAULT_EMAIL
   }
 }
 
@@ -290,13 +291,14 @@ export default function YedekPanel() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="ornek@mail.com"
+                placeholder="hasanaydos1727@gmail.com"
                 disabled={busy}
               />
             </label>
             <p className="yedek__field-hint">
-              Doldurursanız yedek JSON dosyası bu adrese de gönderilir. Boş
-              bırakırsanız yalnızca indirilir ve sisteme kaydedilir.
+              Resend test modunda mail yalnızca{' '}
+              <strong>hasanaydos1727@gmail.com</strong> adresine gider. Başka
+              adrese göndermek için Resend’de domain doğrulamanız gerekir.
             </p>
             <div className="yedek__dialog-actions">
               <button

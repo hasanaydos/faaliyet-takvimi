@@ -173,10 +173,20 @@ async function sendBackupEmail({ to, aciklama, olusturma, adet, payload }) {
 
   if (!res.ok) {
     const errBody = await res.text().catch(() => '')
-    return {
-      sent: false,
-      reason: `E-posta gonderilemedi (${res.status})${errBody ? `: ${errBody.slice(0, 180)}` : ''}`,
+    let reason = `E-posta gonderilemedi (${res.status})`
+    try {
+      const parsed = JSON.parse(errBody)
+      const msg = String(parsed?.message || '')
+      if (msg.includes('only send testing emails')) {
+        reason =
+          'Resend test modunda: mail yalnizca hasanaydos1727@gmail.com adresine gidebilir. Bu adresi kullanin veya Resend’de domain dogrulayin.'
+      } else if (msg) {
+        reason = msg
+      }
+    } catch {
+      if (errBody) reason += `: ${errBody.slice(0, 180)}`
     }
+    return { sent: false, reason }
   }
 
   return { sent: true }
