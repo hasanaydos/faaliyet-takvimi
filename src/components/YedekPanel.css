@@ -114,9 +114,28 @@
   min-height: 4.5rem;
 }
 
-.yedek__field textarea:focus {
+.yedek__field input[type='email'] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: #fff;
+  font: inherit;
+  color: var(--ink);
+}
+
+.yedek__field textarea:focus,
+.yedek__field input[type='email']:focus {
   outline: none;
   border-color: var(--accent);
+}
+
+.yedek__field-hint {
+  margin: -0.55rem 0 1rem;
+  font-size: 0.8rem;
+  color: var(--muted);
+  line-height: 1.4;
 }
 
 .yedek__dialog-actions {

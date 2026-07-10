@@ -123,6 +123,65 @@ async function pruneYedekler(db) {
   }
 }
 
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+}
+
+async function sendBackupEmail({ to, aciklama, olusturma, adet, payload }) {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) {
+    return {
+      sent: false,
+      reason: 'E-posta servisi yapilandirilmamis (RESEND_API_KEY eksik)',
+    }
+  }
+
+  const from =
+    process.env.BACKUP_EMAIL_FROM ||
+    'Faaliyet Takvimi <onboarding@resend.dev>'
+  const stamp = olusturma.slice(0, 19).replace(/[:T]/g, '-')
+  const filename = `faaliyet-yedek-${stamp}.json`
+  const json = JSON.stringify(payload, null, 2)
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject: `Faaliyet Takvimi yedegi: ${aciklama}`,
+      text: [
+        'Faaliyet Takvimi yedek dosyasi ektedir.',
+        '',
+        `Aciklama: ${aciklama}`,
+        `Tarih: ${olusturma}`,
+        `Faaliyet sayisi: ${adet}`,
+        '',
+        'Bu dosyayi "Yedekten geri yukle > Dosyadan yukle" ile geri yukleyebilirsiniz.',
+      ].join('\n'),
+      attachments: [
+        {
+          filename,
+          content: Buffer.from(json, 'utf8').toString('base64'),
+        },
+      ],
+    }),
+  })
+
+  if (!res.ok) {
+    const errBody = await res.text().catch(() => '')
+    return {
+      sent: false,
+      reason: `E-posta gonderilemedi (${res.status})${errBody ? `: ${errBody.slice(0, 180)}` : ''}`,
+    }
+  }
+
+  return { sent: true }
+}
+
 function toMeta(row, veri) {
   let adet = 0
   try {
@@ -192,19 +251,44 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'Gecersiz yedek verisi' })
       }
 
+      const email = String(body.email ?? '').trim().toLowerCase()
+      if (email && !isValidEmail(email)) {
+        return res.status(400).json({ error: 'Gecersiz e-posta adresi' })
+      }
+
       const id = randomUUID()
       const olusturma = new Date().toISOString()
-      const veri = JSON.stringify({
+      const veriObj = {
         version: 1,
         faaliyetler: snapshot.faaliyetler,
         sort: snapshot.sort,
-      })
+      }
+      const veri = JSON.stringify(veriObj)
 
       await db.execute({
         sql: 'INSERT INTO yedekler (id, aciklama, olusturma, veri) VALUES (?, ?, ?, ?)',
         args: [id, aciklama, olusturma, veri],
       })
       await pruneYedekler(db)
+
+      let emailResult = { sent: false, reason: null }
+      if (email) {
+        emailResult = await sendBackupEmail({
+          to: email,
+          aciklama,
+          olusturma,
+          adet: snapshot.faaliyetler.length,
+          payload: {
+            version: 1,
+            id,
+            aciklama,
+            olusturma,
+            adet: snapshot.faaliyetler.length,
+            faaliyetler: snapshot.faaliyetler,
+            sort: snapshot.sort,
+          },
+        })
+      }
 
       return res.status(201).json({
         yedek: {
@@ -216,6 +300,8 @@ export default async function handler(req, res) {
           sort: snapshot.sort,
           version: 1,
         },
+        email: emailResult,
+        emailConfigured: Boolean(process.env.RESEND_API_KEY),
       })
     }
 
