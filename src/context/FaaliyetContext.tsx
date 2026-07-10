@@ -29,6 +29,7 @@ interface FaaliyetContextValue {
   setFaaliyetler: (items: Faaliyet[]) => void
   setSort: (sort: ListSort | null) => void
   applySort: (key: SortKey) => void
+  restoreSnapshot: (items: Faaliyet[], nextSort: ListSort | null) => void
   updateFaaliyet: (id: string, patch: Partial<Omit<Faaliyet, 'id'>>) => void
   syncTurRenk: (id: string) => void
   addFaaliyet: () => void
@@ -162,6 +163,14 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
     })
   }, [])
 
+  const restoreSnapshot = useCallback(
+    (items: Faaliyet[], nextSort: ListSort | null) => {
+      setFaaliyetlerState(items.length > 0 ? items : [emptyRow()])
+      setSortState(nextSort)
+    },
+    [],
+  )
+
   const updateFaaliyet = useCallback(
     (id: string, patch: Partial<Omit<Faaliyet, 'id'>>) => {
       setFaaliyetlerState((prev) =>
@@ -210,6 +219,7 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
       setFaaliyetler,
       setSort,
       applySort,
+      restoreSnapshot,
       updateFaaliyet,
       syncTurRenk,
       addFaaliyet,
@@ -224,6 +234,7 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
       setFaaliyetler,
       setSort,
       applySort,
+      restoreSnapshot,
       updateFaaliyet,
       syncTurRenk,
       addFaaliyet,

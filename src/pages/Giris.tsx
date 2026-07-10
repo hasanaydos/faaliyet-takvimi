@@ -8,6 +8,7 @@ import {
   type SortKey,
 } from '../context/FaaliyetContext'
 import { useViewMode } from '../context/ViewModeContext'
+import YedekPanel from '../components/YedekPanel'
 import { downloadSablon, parseFaaliyetExcel } from '../utils/excel'
 import './Giris.css'
 
@@ -206,6 +207,8 @@ export default function Giris() {
           sıralayabilirsiniz; sıra tüm cihazlarda kalıcıdır.
         </p>
       )}
+
+      <YedekPanel />
 
       {mode === 'mobile' ? (
         <>
