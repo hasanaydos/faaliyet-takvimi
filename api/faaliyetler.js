@@ -1,5 +1,8 @@
 import { createClient } from '@libsql/client'
 
+const SORT_KEYS = new Set(['ad', 'tur', 'baslangic', 'bitis', 'etiket', 'renk'])
+const SORT_DIRS = new Set(['asc', 'desc'])
+
 function getClient() {
   const url = process.env.TURSO_DATABASE_URL
   const authToken = process.env.TURSO_AUTH_TOKEN
@@ -21,6 +24,12 @@ async function ensureSchema() {
       etiket TEXT NOT NULL DEFAULT '',
       renk TEXT NOT NULL DEFAULT '',
       sira INTEGER NOT NULL DEFAULT 0
+    )
+  `)
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS ayarlar (
+      anahtar TEXT PRIMARY KEY,
+      deger TEXT NOT NULL DEFAULT ''
     )
   `)
   return db
@@ -51,6 +60,46 @@ function isFaaliyet(value) {
   )
 }
 
+function normalizeSort(value) {
+  if (!value || typeof value !== 'object') return null
+  const key = value.key
+  const dir = value.dir
+  if (!SORT_KEYS.has(key) || !SORT_DIRS.has(dir)) return null
+  return { key, dir }
+}
+
+async function readSort(db) {
+  const result = await db.execute(
+    "SELECT anahtar, deger FROM ayarlar WHERE anahtar IN ('sort_key', 'sort_dir')",
+  )
+  const map = Object.fromEntries(
+    result.rows.map((row) => [String(row.anahtar), String(row.deger ?? '')]),
+  )
+  return normalizeSort({ key: map.sort_key, dir: map.sort_dir })
+}
+
+async function writeSort(db, sort) {
+  if (!sort) {
+    await db.execute("DELETE FROM ayarlar WHERE anahtar IN ('sort_key', 'sort_dir')")
+    return
+  }
+  await db.batch(
+    [
+      {
+        sql: `INSERT INTO ayarlar (anahtar, deger) VALUES ('sort_key', ?)
+              ON CONFLICT(anahtar) DO UPDATE SET deger = excluded.deger`,
+        args: [sort.key],
+      },
+      {
+        sql: `INSERT INTO ayarlar (anahtar, deger) VALUES ('sort_dir', ?)
+              ON CONFLICT(anahtar) DO UPDATE SET deger = excluded.deger`,
+        args: [sort.dir],
+      },
+    ],
+    'write',
+  )
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, PUT, OPTIONS')
@@ -68,7 +117,8 @@ export default async function handler(req, res) {
         'SELECT id, ad, tur, baslangic, bitis, etiket, renk FROM faaliyetler ORDER BY sira ASC, id ASC',
       )
       const items = result.rows.map((row) => rowToFaaliyet(row))
-      return res.status(200).json({ faaliyetler: items })
+      const sort = await readSort(db)
+      return res.status(200).json({ faaliyetler: items, sort })
     }
 
     if (req.method === 'PUT') {
@@ -76,6 +126,19 @@ export default async function handler(req, res) {
       const list = Array.isArray(body?.faaliyetler) ? body.faaliyetler : null
       if (!list || !list.every(isFaaliyet)) {
         return res.status(400).json({ error: 'Gecersiz veri' })
+      }
+
+      const sortProvided = Object.prototype.hasOwnProperty.call(body ?? {}, 'sort')
+      let sort = undefined
+      if (sortProvided) {
+        if (body.sort === null) {
+          sort = null
+        } else {
+          sort = normalizeSort(body.sort)
+          if (!sort) {
+            return res.status(400).json({ error: 'Gecersiz siralama' })
+          }
+        }
       }
 
       await db.execute('DELETE FROM faaliyetler')
@@ -88,7 +151,15 @@ export default async function handler(req, res) {
         await db.batch(stmts, 'write')
       }
 
-      return res.status(200).json({ ok: true, count: list.length })
+      if (sortProvided) {
+        await writeSort(db, sort)
+      }
+
+      return res.status(200).json({
+        ok: true,
+        count: list.length,
+        sort: sortProvided ? sort : await readSort(db),
+      })
     }
 
     return res.status(405).json({ error: 'Method not allowed' })

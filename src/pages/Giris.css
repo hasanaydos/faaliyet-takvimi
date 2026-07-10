@@ -145,6 +145,30 @@
   color: var(--accent);
 }
 
+.giris__th--sorted {
+  background: rgba(196, 92, 38, 0.16);
+  color: var(--ink);
+}
+
+.giris__th--sorted .giris__sort-btn {
+  color: var(--ink);
+}
+
+.giris__td--sorted {
+  background: rgba(196, 92, 38, 0.08);
+}
+
+.giris__field--sorted {
+  background: rgba(196, 92, 38, 0.08);
+  border-radius: 4px;
+  padding: 0.35rem;
+  margin: -0.35rem;
+}
+
+.giris__field--sorted span {
+  color: var(--accent);
+}
+
 .giris__mobile-sort {
   display: flex;
   flex-direction: column;

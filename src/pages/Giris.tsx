@@ -1,14 +1,15 @@
-import { useMemo, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { Faaliyet } from '../types'
 import { FAALIYET_RENKLERI } from '../types'
-import { useFaaliyetler } from '../context/FaaliyetContext'
+import {
+  useFaaliyetler,
+  type SortDir,
+  type SortKey,
+} from '../context/FaaliyetContext'
 import { useViewMode } from '../context/ViewModeContext'
 import { downloadSablon, parseFaaliyetExcel } from '../utils/excel'
 import './Giris.css'
-
-type SortKey = 'ad' | 'tur' | 'baslangic' | 'bitis' | 'etiket' | 'renk'
-type SortDir = 'asc' | 'desc'
 
 const SORT_COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'ad', label: 'Faaliyet adı' },
@@ -18,13 +19,6 @@ const SORT_COLUMNS: { key: SortKey; label: string }[] = [
   { key: 'etiket', label: 'Etiket' },
   { key: 'renk', label: 'Renk' },
 ]
-
-function compareFaaliyet(a: Faaliyet, b: Faaliyet, key: SortKey): number {
-  return a[key].localeCompare(b[key], 'tr', {
-    sensitivity: 'base',
-    numeric: true,
-  })
-}
 
 function SortHeader({
   label,
@@ -39,7 +33,10 @@ function SortHeader({
 }) {
   const marker = !active ? '↕' : dir === 'asc' ? '↑' : '↓'
   return (
-    <th aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}>
+    <th
+      className={active ? 'giris__th--sorted' : undefined}
+      aria-sort={active ? (dir === 'asc' ? 'ascending' : 'descending') : 'none'}
+    >
       <button type="button" className="giris__sort-btn" onClick={onClick}>
         <span>{label}</span>
         <span
@@ -88,10 +85,17 @@ function RenkPicker({
   )
 }
 
+function cellClass(active: boolean): string | undefined {
+  return active ? 'giris__td--sorted' : undefined
+}
+
 export default function Giris() {
   const {
     faaliyetler,
+    sort,
     setFaaliyetler,
+    setSort,
+    applySort,
     updateFaaliyet,
     syncTurRenk,
     addFaaliyet,
@@ -104,29 +108,9 @@ export default function Giris() {
   const [mesaj, setMesaj] = useState<{ tip: 'ok' | 'hata'; metin: string } | null>(
     null,
   )
-  const [sortKey, setSortKey] = useState<SortKey | null>(null)
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
 
-  function toggleSort(key: SortKey) {
-    if (sortKey !== key) {
-      setSortKey(key)
-      setSortDir('asc')
-      return
-    }
-    if (sortDir === 'asc') {
-      setSortDir('desc')
-      return
-    }
-    setSortKey(null)
-  }
-
-  const siraliFaaliyetler = useMemo(() => {
-    if (!sortKey) return faaliyetler
-    return [...faaliyetler].sort((a, b) => {
-      const cmp = compareFaaliyet(a, b, sortKey)
-      return sortDir === 'asc' ? cmp : -cmp
-    })
-  }, [faaliyetler, sortKey, sortDir])
+  const sortKey = sort?.key ?? null
+  const sortDir = sort?.dir ?? null
 
   async function handleHizliYukle(file: File | undefined) {
     if (!file) return
@@ -137,6 +121,7 @@ export default function Giris() {
       const buffer = await file.arrayBuffer()
       const { faaliyetler: parsed, skipped } = parseFaaliyetExcel(buffer)
       setFaaliyetler(parsed)
+      setSort(null)
 
       const skipNotu =
         skipped > 0 ? ` (${skipped} boş/geçersiz satır atlandı)` : ''
@@ -218,7 +203,7 @@ export default function Giris() {
           boş bırakılırsa her <strong>tür</strong> için ayrı bir renk atanır;
           aynı türdeki faaliyetler aynı rengi paylaşır. Doluysa{' '}
           <code>#c45c26</code> gibi hex kullanın. Sütun başlığına tıklayarak
-          sıralayabilirsiniz.
+          sıralayabilirsiniz; sıra tüm cihazlarda kalıcıdır.
         </p>
       )}
 
@@ -227,19 +212,18 @@ export default function Giris() {
           <label className="giris__mobile-sort">
             <span>Sırala</span>
             <select
-              value={sortKey ? `${sortKey}:${sortDir}` : ''}
+              value={sortKey && sortDir ? `${sortKey}:${sortDir}` : ''}
               onChange={(e) => {
                 const value = e.target.value
                 if (!value) {
-                  setSortKey(null)
+                  setSort(null)
                   return
                 }
                 const [key, dir] = value.split(':') as [SortKey, SortDir]
-                setSortKey(key)
-                setSortDir(dir)
+                setSort({ key, dir })
               }}
             >
-              <option value="">Varsayılan sıra</option>
+              <option value="">Sıralama yok</option>
               {SORT_COLUMNS.flatMap((col) => [
                 <option key={`${col.key}-asc`} value={`${col.key}:asc`}>
                   {col.label} ↑
@@ -251,7 +235,7 @@ export default function Giris() {
             </select>
           </label>
           <div className="giris__cards">
-            {siraliFaaliyetler.map((f, index) => (
+            {faaliyetler.map((f, index) => (
               <article key={f.id} className="giris__card">
                 <div className="giris__card-head">
                   <span className="giris__card-index">#{index + 1}</span>
@@ -266,7 +250,13 @@ export default function Giris() {
                   </button>
                 </div>
                 <div className="giris__card-grid">
-                  <label className="giris__field">
+                  <label
+                    className={
+                      sortKey === 'ad'
+                        ? 'giris__field giris__field--sorted'
+                        : 'giris__field'
+                    }
+                  >
                     <span>Faaliyet adı</span>
                     <input
                       type="text"
@@ -277,7 +267,13 @@ export default function Giris() {
                       }
                     />
                   </label>
-                  <label className="giris__field">
+                  <label
+                    className={
+                      sortKey === 'tur'
+                        ? 'giris__field giris__field--sorted'
+                        : 'giris__field'
+                    }
+                  >
                     <span>Tür</span>
                     <input
                       type="text"
@@ -289,7 +285,13 @@ export default function Giris() {
                       onBlur={() => syncTurRenk(f.id)}
                     />
                   </label>
-                  <label className="giris__field">
+                  <label
+                    className={
+                      sortKey === 'baslangic'
+                        ? 'giris__field giris__field--sorted'
+                        : 'giris__field'
+                    }
+                  >
                     <span>Başlangıç</span>
                     <input
                       type="date"
@@ -299,7 +301,13 @@ export default function Giris() {
                       }
                     />
                   </label>
-                  <label className="giris__field">
+                  <label
+                    className={
+                      sortKey === 'bitis'
+                        ? 'giris__field giris__field--sorted'
+                        : 'giris__field'
+                    }
+                  >
                     <span>Bitiş</span>
                     <input
                       type="date"
@@ -310,7 +318,13 @@ export default function Giris() {
                       }
                     />
                   </label>
-                  <label className="giris__field">
+                  <label
+                    className={
+                      sortKey === 'etiket'
+                        ? 'giris__field giris__field--sorted'
+                        : 'giris__field'
+                    }
+                  >
                     <span>Etiket</span>
                     <input
                       type="text"
@@ -321,7 +335,13 @@ export default function Giris() {
                       }
                     />
                   </label>
-                  <div className="giris__field giris__field--renk">
+                  <div
+                    className={
+                      sortKey === 'renk'
+                        ? 'giris__field giris__field--renk giris__field--sorted'
+                        : 'giris__field giris__field--renk'
+                    }
+                  >
                     <span>Renk</span>
                     <RenkPicker f={f} onUpdate={updateFaaliyet} />
                   </div>
@@ -341,16 +361,16 @@ export default function Giris() {
                     label={col.label}
                     active={sortKey === col.key}
                     dir={sortKey === col.key ? sortDir : null}
-                    onClick={() => toggleSort(col.key)}
+                    onClick={() => applySort(col.key)}
                   />
                 ))}
                 <th aria-label="Sil" />
               </tr>
             </thead>
             <tbody>
-              {siraliFaaliyetler.map((f) => (
+              {faaliyetler.map((f) => (
                 <tr key={f.id}>
-                  <td>
+                  <td className={cellClass(sortKey === 'ad')}>
                     <input
                       type="text"
                       value={f.ad}
@@ -360,7 +380,7 @@ export default function Giris() {
                       }
                     />
                   </td>
-                  <td>
+                  <td className={cellClass(sortKey === 'tur')}>
                     <input
                       type="text"
                       value={f.tur}
@@ -371,7 +391,7 @@ export default function Giris() {
                       onBlur={() => syncTurRenk(f.id)}
                     />
                   </td>
-                  <td>
+                  <td className={cellClass(sortKey === 'baslangic')}>
                     <input
                       type="date"
                       value={f.baslangic}
@@ -380,7 +400,7 @@ export default function Giris() {
                       }
                     />
                   </td>
-                  <td>
+                  <td className={cellClass(sortKey === 'bitis')}>
                     <input
                       type="date"
                       value={f.bitis}
@@ -390,7 +410,7 @@ export default function Giris() {
                       }
                     />
                   </td>
-                  <td>
+                  <td className={cellClass(sortKey === 'etiket')}>
                     <input
                       type="text"
                       value={f.etiket}
@@ -400,7 +420,7 @@ export default function Giris() {
                       }
                     />
                   </td>
-                  <td>
+                  <td className={cellClass(sortKey === 'renk')}>
                     <RenkPicker f={f} onUpdate={updateFaaliyet} />
                   </td>
                   <td>

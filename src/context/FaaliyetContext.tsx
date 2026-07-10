@@ -11,14 +11,24 @@ import {
 import { v4 as uuidv4 } from 'uuid'
 import type { Faaliyet } from '../types'
 import { renkForTur, turRenkHaritasi, normalizeTur } from '../utils/renk'
-import { fetchFaaliyetler, saveFaaliyetler } from '../api/faaliyetApi'
+import {
+  fetchFaaliyetler,
+  saveFaaliyetler,
+  sortFaaliyetler,
+  type ListSort,
+  type SortDir,
+  type SortKey,
+} from '../api/faaliyetApi'
 
 interface FaaliyetContextValue {
   faaliyetler: Faaliyet[]
+  sort: ListSort | null
   loading: boolean
   saving: boolean
   error: string | null
   setFaaliyetler: (items: Faaliyet[]) => void
+  setSort: (sort: ListSort | null) => void
+  applySort: (key: SortKey) => void
   updateFaaliyet: (id: string, patch: Partial<Omit<Faaliyet, 'id'>>) => void
   syncTurRenk: (id: string) => void
   addFaaliyet: () => void
@@ -54,6 +64,7 @@ function emptyRow(mevcut: Faaliyet[] = []): Faaliyet {
 
 export function FaaliyetProvider({ children }: { children: ReactNode }) {
   const [faaliyetler, setFaaliyetlerState] = useState<Faaliyet[]>([])
+  const [sort, setSortState] = useState<ListSort | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -64,29 +75,32 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
     let cancelled = false
     ;(async () => {
       try {
-        let items = await fetchFaaliyetler()
+        let payload = await fetchFaaliyetler()
         if (cancelled) return
 
         // Eski localStorage verisini bir kez sunucuya taşı
-        if (items.length === 0) {
+        if (payload.faaliyetler.length === 0) {
           const legacy = loadLegacyLocal()
           if (legacy) {
-            await saveFaaliyetler(legacy)
-            items = legacy
+            await saveFaaliyetler(legacy, null)
+            payload = { faaliyetler: legacy, sort: null }
             localStorage.removeItem(LEGACY_STORAGE_KEY)
           }
         }
 
-        setFaaliyetlerState(items.length > 0 ? items : [emptyRow()])
+        setFaaliyetlerState(
+          payload.faaliyetler.length > 0 ? payload.faaliyetler : [emptyRow()],
+        )
+        setSortState(payload.sort)
         setError(null)
       } catch (err) {
         if (cancelled) return
         setFaaliyetlerState([emptyRow()])
+        setSortState(null)
         setError(err instanceof Error ? err.message : 'Veriler yuklenemedi')
       } finally {
         if (!cancelled) {
           setLoading(false)
-          // İlk yüklemeden sonra kaydı aç
           setTimeout(() => {
             skipSave.current = false
           }, 0)
@@ -105,7 +119,7 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
     saveTimer.current = setTimeout(async () => {
       setSaving(true)
       try {
-        await saveFaaliyetler(faaliyetler)
+        await saveFaaliyetler(faaliyetler, sort)
         setError(null)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Kaydetme basarisiz')
@@ -117,10 +131,35 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
     }
-  }, [faaliyetler, loading])
+  }, [faaliyetler, sort, loading])
 
   const setFaaliyetler = useCallback((items: Faaliyet[]) => {
     setFaaliyetlerState(items.length > 0 ? items : [emptyRow()])
+  }, [])
+
+  const setSort = useCallback((next: ListSort | null) => {
+    setSortState(next)
+    if (next) {
+      setFaaliyetlerState((items) => sortFaaliyetler(items, next))
+    }
+  }, [])
+
+  const applySort = useCallback((key: SortKey) => {
+    setSortState((prev) => {
+      let next: ListSort | null
+      if (!prev || prev.key !== key) {
+        next = { key, dir: 'asc' }
+      } else if (prev.dir === 'asc') {
+        next = { key, dir: 'desc' }
+      } else {
+        next = null
+      }
+
+      if (next) {
+        setFaaliyetlerState((items) => sortFaaliyetler(items, next))
+      }
+      return next
+    })
   }, [])
 
   const updateFaaliyet = useCallback(
@@ -131,8 +170,8 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
           const next = { ...f, ...patch }
           if (patch.tur !== undefined && patch.renk === undefined) {
             const map = turRenkHaritasi(prev, id)
-            const key = normalizeTur(next.tur)
-            if (map.has(key)) next.renk = map.get(key)!
+            const nkey = normalizeTur(next.tur)
+            if (map.has(nkey)) next.renk = map.get(nkey)!
           }
           return next
         }),
@@ -164,10 +203,13 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       faaliyetler,
+      sort,
       loading,
       saving,
       error,
       setFaaliyetler,
+      setSort,
+      applySort,
       updateFaaliyet,
       syncTurRenk,
       addFaaliyet,
@@ -175,10 +217,13 @@ export function FaaliyetProvider({ children }: { children: ReactNode }) {
     }),
     [
       faaliyetler,
+      sort,
       loading,
       saving,
       error,
       setFaaliyetler,
+      setSort,
+      applySort,
       updateFaaliyet,
       syncTurRenk,
       addFaaliyet,
@@ -205,3 +250,5 @@ export function isFaaliyetValid(f: Faaliyet): boolean {
     f.baslangic <= f.bitis
   )
 }
+
+export type { ListSort, SortDir, SortKey }
