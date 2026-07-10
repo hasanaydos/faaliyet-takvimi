@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
-import { format } from 'date-fns'
+import { format, parseISO } from 'date-fns'
+import { tr } from 'date-fns/locale'
 import { Link } from 'react-router-dom'
+import type { Faaliyet } from '../types'
 import { isFaaliyetValid, useFaaliyetler } from '../context/FaaliyetContext'
 import { useViewMode } from '../context/ViewModeContext'
 import {
@@ -36,6 +38,87 @@ function loadLayout(): CalendarLayout {
   return 'aylik'
 }
 
+function formatTarih(value: string): string {
+  try {
+    return format(parseISO(value), 'd MMMM yyyy', { locale: tr })
+  } catch {
+    return value
+  }
+}
+
+function SeritPopup({
+  faaliyet,
+  onClose,
+}: {
+  faaliyet: Faaliyet
+  onClose: () => void
+}) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  return (
+    <div
+      className="takvim__popup-backdrop"
+      role="presentation"
+      onClick={onClose}
+    >
+      <div
+        className="takvim__popup"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="takvim-popup-title"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="takvim__popup-head">
+          <span
+            className="takvim__popup-renk"
+            style={{ backgroundColor: faaliyet.renk }}
+            aria-hidden="true"
+          />
+          <h2 id="takvim-popup-title">{faaliyet.ad || 'İsimsiz faaliyet'}</h2>
+          <button
+            type="button"
+            className="takvim__popup-close"
+            onClick={onClose}
+            aria-label="Kapat"
+          >
+            ×
+          </button>
+        </div>
+        <dl className="takvim__popup-meta">
+          <div>
+            <dt>Tür</dt>
+            <dd>{faaliyet.tur || '—'}</dd>
+          </div>
+          <div>
+            <dt>Başlangıç</dt>
+            <dd>{formatTarih(faaliyet.baslangic)}</dd>
+          </div>
+          <div>
+            <dt>Bitiş</dt>
+            <dd>{formatTarih(faaliyet.bitis)}</dd>
+          </div>
+          <div>
+            <dt>Etiket</dt>
+            <dd>{faaliyet.etiket || '—'}</dd>
+          </div>
+          <div>
+            <dt>Renk</dt>
+            <dd>
+              <span className="takvim__popup-hex">{faaliyet.renk}</span>
+            </dd>
+          </div>
+        </dl>
+      </div>
+    </div>
+  )
+}
+
 function WeekRows({
   weeks,
   laneH,
@@ -43,6 +126,7 @@ function WeekRows({
   stripTop,
   isMobile,
   continuous,
+  onSeritClick,
 }: {
   weeks: Array<HaftaSatiri | KesintisizHafta>
   laneH: number
@@ -50,6 +134,7 @@ function WeekRows({
   stripTop: number
   isMobile: boolean
   continuous: boolean
+  onSeritClick: (faaliyet: Faaliyet) => void
 }) {
   const maxLane = maxLaneInWeeks(weeks)
   const stripAreaH = (maxLane + 1) * (laneH + laneGap) + laneGap
@@ -143,8 +228,9 @@ function WeekRows({
                   .join(' · ')
 
                 return (
-                  <div
+                  <button
                     key={`${seg.faaliyet.id}-${wi}`}
+                    type="button"
                     className={[
                       'takvim__serit',
                       seg.isStart ? 'takvim__serit--start' : '',
@@ -160,11 +246,12 @@ function WeekRows({
                       backgroundColor: seg.faaliyet.renk,
                     }}
                     title={label}
+                    onClick={() => onSeritClick(seg.faaliyet)}
                   >
                     <span className="takvim__serit-text">
                       {isMobile ? seg.faaliyet.ad : label}
                     </span>
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -179,6 +266,7 @@ export default function Takvim() {
   const { faaliyetler } = useFaaliyetler()
   const { mode } = useViewMode()
   const [layout, setLayout] = useState<CalendarLayout>(loadLayout)
+  const [secili, setSecili] = useState<Faaliyet | null>(null)
 
   useEffect(() => {
     try {
@@ -286,6 +374,7 @@ export default function Takvim() {
                 stripTop={stripTop}
                 isMobile={isMobile}
                 continuous
+                onSeritClick={setSecili}
               />
             </div>
           </div>
@@ -328,6 +417,7 @@ export default function Takvim() {
                       stripTop={stripTop}
                       isMobile={isMobile}
                       continuous={false}
+                      onSeritClick={setSecili}
                     />
                   </div>
                 </section>
@@ -336,6 +426,10 @@ export default function Takvim() {
           </div>
         </div>
       )}
+
+      {secili ? (
+        <SeritPopup faaliyet={secili} onClose={() => setSecili(null)} />
+      ) : null}
     </div>
   )
 }
